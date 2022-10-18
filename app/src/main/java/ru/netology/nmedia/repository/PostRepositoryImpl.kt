@@ -102,7 +102,7 @@ class PostRepositoryImpl : PostRepository {
             })
     }
 
-    override fun removeByIdAsync(id: Long, callback: PostRepository.Callback<Post>) {
+    override fun removeByIdAsync(id: Long, callback: PostRepository.Callback<Unit>) {
         val request: Request = Request.Builder()
             .delete()
             .url("${BASE_URL}/api/slow/posts/$id")

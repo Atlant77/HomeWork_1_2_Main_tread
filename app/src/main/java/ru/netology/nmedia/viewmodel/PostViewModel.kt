@@ -81,18 +81,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             repository.likeByIdAsync(id, object : PostRepository.Callback<Post> {
                 override fun onSuccess(postFromServer: Post) {
                     val postsNewLiked = _data.value?.posts.orEmpty().map {
-                        if (it.id === postFromServer.id) {
-                            Post(
-                                id = postFromServer.id,
-                                author = postFromServer.author,
-                                content = postFromServer.content,
-                                published = postFromServer.published,
-                                likedByMe = postFromServer.likedByMe,
-                                likes = postFromServer.likes
-                            )
-                        } else it
+                        if (it.id == postFromServer.id) postFromServer else it
                     }
-                    println(postFromServer)
                     _data.postValue(FeedModel(posts = postsNewLiked))
                 }
 
@@ -104,16 +94,7 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
             repository.delLikeByIdAsync(id, object : PostRepository.Callback<Post> {
                 override fun onSuccess(postFromServer: Post) {
                     val postsNewLiked = _data.value?.posts.orEmpty().map {
-                        if (it.id === postFromServer.id) {
-                            Post(
-                                id = postFromServer.id,
-                                author = postFromServer.author,
-                                content = postFromServer.content,
-                                published = postFromServer.published,
-                                likedByMe = postFromServer.likedByMe,
-                                likes = postFromServer.likes
-                            )
-                        } else it
+                        if (it.id == postFromServer.id) postFromServer else it
                     }
                     _data.postValue(FeedModel(posts = postsNewLiked))
                 }
@@ -133,9 +114,9 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
                 .filter { it.id != id }
             )
         )
-        repository.removeByIdAsync(id, object : PostRepository.Callback<Post> {
-            override fun onSuccess(posts: Post) {
-                _postCreated.postValue(Unit)
+        repository.removeByIdAsync(id, object : PostRepository.Callback<Unit> {
+            override fun onSuccess(posts: Unit) {
+
             }
 
             override fun onError(e: Exception) {

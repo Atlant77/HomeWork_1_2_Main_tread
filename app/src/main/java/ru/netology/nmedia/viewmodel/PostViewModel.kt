@@ -1,6 +1,6 @@
 package ru.netology.nmedia.viewmodel
 
-import  android.app.Application
+import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,7 +9,7 @@ import ru.netology.nmedia.model.FeedModel
 import ru.netology.nmedia.repository.PostRepository
 import ru.netology.nmedia.repository.PostRepositoryImpl
 import ru.netology.nmedia.util.SingleLiveEvent
-import kotlin.Exception
+
 
 private val empty = Post(
     id = 0,
@@ -31,6 +31,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
     private val _postCreated = SingleLiveEvent<Unit>()
     val postCreated: LiveData<Unit>
         get() = _postCreated
+    private val _serverCode = MutableLiveData<Int>()
+    val serverCode: LiveData<Int> = _serverCode
 
     init {
         loadPosts()
@@ -40,11 +42,11 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         _data.value = FeedModel(loading = true)
         repository.getAllAsync(object : PostRepository.Callback<List<Post>> {
             override fun onSuccess(posts: List<Post>) {
-                _data.postValue(FeedModel(posts = posts, empty = posts.isEmpty()))
+                _data.value = FeedModel(posts = posts, empty = posts.isEmpty())
             }
 
-            override fun onError(e: Exception) {
-                _data.postValue(FeedModel(error = true))
+            override fun onError(e: Exception, serverCode: Int) {
+                _data.value = FeedModel(error = true)
             }
         })
     }
@@ -53,11 +55,12 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         edited.value?.let {
             repository.saveAsync(post = it, object : PostRepository.Callback<Post> {
                 override fun onSuccess(posts: Post) {
-                    _postCreated.postValue(Unit)
+                    _postCreated.value = Unit
                 }
 
-                override fun onError(e: Exception) {
-                    onError(e)
+                override fun onError(e: Exception, serverCode: Int) {
+                    onError(e, serverCode)
+
                 }
             })
         }
@@ -80,28 +83,28 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
         val postToLike = _data.value?.posts.orEmpty().filter { it.id == id }
         if (!postToLike[0].likedByMe) {
             repository.likeByIdAsync(id, object : PostRepository.Callback<Post> {
-                override fun onSuccess(postFromServer: Post) {
+                override fun onSuccess(posts: Post) {
                     val postsNewLiked = _data.value?.posts.orEmpty().map {
-                        if (it.id == postFromServer.id) postFromServer else it
+                        if (it.id == posts.id) posts else it
                     }
-                    _data.postValue(FeedModel(posts = postsNewLiked))
+                    _data.value = FeedModel(posts = postsNewLiked)
                 }
 
-                override fun onError(e: Exception) {
-                    onError(e)
+                override fun onError(e: Exception, serverCode: Int) {
+                    _serverCode.value = serverCode
                 }
             })
         } else {
             repository.delLikeByIdAsync(id, object : PostRepository.Callback<Post> {
-                override fun onSuccess(postFromServer: Post) {
+                override fun onSuccess(posts: Post) {
                     val postsNewLiked = _data.value?.posts.orEmpty().map {
-                        if (it.id == postFromServer.id) postFromServer else it
+                        if (it.id == posts.id) posts else it
                     }
-                    _data.postValue(FeedModel(posts = postsNewLiked))
+                    _data.value = FeedModel(posts = postsNewLiked)
                 }
 
-                override fun onError(e: Exception) {
-                    onError(e)
+                override fun onError(e: Exception, serverCode: Int) {
+                    _serverCode.value = serverCode
                 }
             })
         }
@@ -120,8 +123,8 @@ class PostViewModel(application: Application) : AndroidViewModel(application) {
 
             }
 
-            override fun onError(e: Exception) {
-                onError(e)
+            override fun onError(e: Exception, serverCode: Int) {
+                onError(e, serverCode)
                 _data.postValue(_data.value?.copy(posts = old))
             }
         })

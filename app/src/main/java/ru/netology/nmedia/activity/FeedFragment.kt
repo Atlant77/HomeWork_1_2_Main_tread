@@ -2,9 +2,11 @@ package ru.netology.nmedia.activity
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -53,12 +55,12 @@ class FeedFragment : Fragment() {
             }
         })
         binding.list.adapter = adapter
-        viewModel.data.observe(viewLifecycleOwner, { state ->
+        viewModel.data.observe(viewLifecycleOwner) { state ->
             adapter.submitList(state.posts)
             binding.progress.isVisible = state.loading
             binding.errorGroup.isVisible = state.error
             binding.emptyText.isVisible = state.empty
-        })
+        }
 
         binding.retryButton.setOnClickListener {
             viewModel.loadPosts()
@@ -71,6 +73,18 @@ class FeedFragment : Fragment() {
         binding.swipe.setOnRefreshListener {
             viewModel.loadPosts()
             binding.swipe.isRefreshing = false
+        }
+
+        viewModel.serverCode.observe(
+            viewLifecycleOwner
+        ) {
+            val toast = Toast.makeText(
+                context,
+                R.string.error_loading,
+                Toast.LENGTH_SHORT
+            )
+            toast.setGravity(Gravity.CENTER, 0, 0)
+            toast.show()
         }
 
         return binding.root
